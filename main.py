@@ -1,11 +1,30 @@
 import os
+import sys
+import subprocess
+
+# Ensure required packages are installed
+def install_requirements():
+    try:
+        import flask
+    except ImportError:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'flask'])
+    
+    try:
+        import whisper
+    except ImportError:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'whisper'])
+
+install_requirements()
+
+# After installation check, import the necessary libraries
 from flask import Flask, request, jsonify
 import whisper
 import tempfile
 
-app = Flask(__name__)
-
+# Load the Whisper model
 model = whisper.load_model("base")
+
+app = Flask(__name__)
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
