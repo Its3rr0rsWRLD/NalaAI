@@ -1,10 +1,8 @@
 import os
-import sys
+import tempfile
 from flask import Flask, request, jsonify
 import whisper
-import tempfile
 
-# Load the Whisper model
 model = whisper.load_model("base")
 
 app = Flask(__name__)
@@ -15,12 +13,19 @@ def transcribe():
         return jsonify({'error': 'No audio file provided'}), 400
 
     audio_file = request.files['audio']
-    with tempfile.NamedTemporaryFile(delete=False) as temp:
+    temp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    try:
         audio_file.save(temp.name)
+        temp.close()
+
         result = model.transcribe(temp.name)
-        transcription = result['text']
-    os.unlink(temp.name)
-    return jsonify({'transcription': transcription})
+        transcription = result.get('text', 'Transcription not available')
+        return jsonify({'transcription': transcription})
+        
+    except Exception as e:
+        return jsonify({'error': f'Error during transcription: {str(e)}'}), 500
+    finally:
+        os.unlink(temp.name)
 
 if __name__ == '__main__':
     app.run(port=5000)
